@@ -4,10 +4,10 @@
 #include <string.h>
 #include <locale.h>
 
-#define EMPTY 0
-#define BLACK -1
-#define WHITE 0
-#define MAX_ATTEMPTS 100000000 // Отформатированное значение для наглядности: 100 000 000
+#define EMPTY -2      // Пустая клетка
+#define BLACK -1      // Черная клетка
+#define WHITE 0       // Белая клетка
+#define MAX_ATTEMPTS 100000000
 
 typedef struct {
     int x;
@@ -21,13 +21,13 @@ typedef struct {
 
 Direction directions[4] = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
 
-// Функция для создания поля (сетки) размером rows x cols
+// Функция для создания поля размером rows x cols
 int** create_field(int rows, int cols) {
     int** field = (int**)malloc(rows * sizeof(int*));
     for (int i = 0; i < rows; i++) {
         field[i] = (int*)malloc(cols * sizeof(int));
         for (int j = 0; j < cols; j++) {
-            field[i][j] = EMPTY;
+            field[i][j] = EMPTY;  // Теперь EMPTY = -2
         }
     }
     return field;
@@ -57,14 +57,13 @@ int is_valid(int x, int y, int rows, int cols) {
     return (x >= 0 && x < rows && y >= 0 && y < cols);
 }
 
-// Улучшенная функция для проверки, свободна ли клетка для линии
+// Функция для проверки, свободна ли клетка для линии
 int is_cell_available_for_line(int** field, int x, int y, int rows, int cols) {
     if (!is_valid(x, y, rows, cols)) return 0;
-    return (field[x][y] == EMPTY); // Клетка должна быть абсолютно пустой
+    return (field[x][y] == EMPTY); // Клетка должна быть пустой (-2)
 }
 
 // Функция для рисования линии от чёрной клетки в направлении dir
-// Возвращает фактическую длину нарисованной линии
 int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int id) {
     int len = 0;
     int cx = x + dir.dx;
@@ -78,7 +77,6 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
         cy += dir.dy;
     }
 
-    // Если нет доступных клеток, возвращаем 0
     if (available_len == 0) return 0;
 
     // Выбираем случайную длину от 1 до доступной
@@ -88,7 +86,7 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
     cx = x + dir.dx;
     cy = y + dir.dy;
     for (int i = 0; i < max_len; i++) {
-        field[cx][cy] = id;
+        field[cx][cy] = id;  // Помечаем клетку ID линии
         len++;
         cx += dir.dx;
         cy += dir.dy;
@@ -97,11 +95,11 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
     return len;
 }
 
-// Проверка, что все белые клетки покрыты
+// Проверка, что все белые клетки покрыты (нет EMPTY кроме BLACK)
 int is_fully_covered(int** field, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            if (field[i][j] == EMPTY) {
+            if (field[i][j] == EMPTY) {  // Проверяем EMPTY = -2
                 return 0; // Есть непокрытая клетка
             }
         }
@@ -109,7 +107,7 @@ int is_fully_covered(int** field, int rows, int cols) {
     return 1; // Всё покрыто
 }
 
-// Улучшенная проверка корректности чисел в черных клетках
+// Проверка корректности чисел в черных клетках
 int verify_black_cells_correct(int** solution, int rows, int cols, Point* blacks, int black_count, int* lengths) {
     // Создаем копию поля для подсчета
     int** temp = copy_field(solution, rows, cols);
@@ -147,8 +145,8 @@ int verify_black_cells_correct(int** solution, int rows, int cols, Point* blacks
     return valid;
 }
 
-// Упрощенная генерация головоломки - более надежный алгоритм
-int** generate_puzzle_simple(int rows, int cols) {
+// Генерация поля
+int** generate_puzzle(int rows, int cols) {
     int** puzzle = create_field(rows, cols);
 
     // Количество черных клеток - больше для больших полей
@@ -163,15 +161,14 @@ int** generate_puzzle_simple(int rows, int cols) {
         black_count = 15 + rand() % 5;
     }
     else if (rows * cols <= 100) {
-        black_count = 36 + rand() % 6; 
+        black_count = 36 + rand() % 6;
     }
     else if (rows * cols <= 121) {
-        black_count = 45 + rand() % 6; 
+        black_count = 45 + rand() % 7;
     }
     else if (rows * cols <= 144) {
-        black_count = 68 + rand() % 6; 
+        black_count = 68 + rand() % 8;
     }
-
 
     // Размещаем черные клетки
     Point* blacks = (Point*)malloc(black_count * sizeof(Point));
@@ -182,7 +179,7 @@ int** generate_puzzle_simple(int rows, int cols) {
         int x = rand() % rows;
         int y = rand() % cols;
 
-        if (puzzle[x][y] == EMPTY) {
+        if (puzzle[x][y] == EMPTY) {  // Проверяем EMPTY = -2
             puzzle[x][y] = BLACK;
             blacks[placed].x = x;
             blacks[placed].y = y;
@@ -207,13 +204,14 @@ int** generate_puzzle_simple(int rows, int cols) {
             int line_len = draw_line(puzzle, blacks[i].x, blacks[i].y, dir, rows, cols, i + 1);
             lengths[i] += line_len;
         }
+    }
 
-        // Если совсем ничего не нарисовали, рисуем хотя бы одну короткую линию
-        if (lengths[i] == 0) {
-            Direction dir = directions[rand() % 4];
-            int line_len = draw_line(puzzle, blacks[i].x, blacks[i].y, dir, rows, cols, i + 1);
-            lengths[i] = line_len;
-        }
+    // Проверяем, что все клетки покрыты
+    if (!is_fully_covered(puzzle, rows, cols)) {
+        free(blacks);
+        free(lengths);
+        free_field(puzzle, rows);
+        return NULL;
     }
 
     // Заменяем черные клетки на числа и остальное на белые
@@ -229,10 +227,10 @@ int** generate_puzzle_simple(int rows, int cols) {
                 }
             }
             else if (puzzle[i][j] == EMPTY) {
-                puzzle[i][j] = WHITE;
+                puzzle[i][j] = WHITE;  // EMPTY -> WHITE (0)
             }
             else if (puzzle[i][j] > 0) { // Часть линии
-                puzzle[i][j] = WHITE;
+                puzzle[i][j] = WHITE;  // Линия -> WHITE (0)
             }
         }
     }
@@ -255,7 +253,7 @@ void print_field(int** field, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         printf("|");
         for (int j = 0; j < cols; j++) {
-            if (field[i][j] == WHITE) {
+            if (field[i][j] == WHITE) {  // WHITE = 0
                 printf(" * |");
             }
             else {
@@ -299,7 +297,7 @@ int is_basically_solvable(int** puzzle, int rows, int cols) {
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            if (puzzle[i][j] == WHITE) {
+            if (puzzle[i][j] == WHITE) {  // WHITE = 0
                 total_white++;
             }
             else if (puzzle[i][j] > 0) {
@@ -341,7 +339,7 @@ int main() {
     while (generated < 3 && attempts < MAX_ATTEMPTS) {
         attempts++;
 
-        int** puzzle = generate_puzzle_simple(rows, cols);
+        int** puzzle = generate_puzzle(rows, cols);
         if (puzzle != NULL) {
             if (is_basically_solvable(puzzle, rows, cols)) {
                 printf("\nПоле %d (попытка %d):\n", generated + 1, attempts);
