@@ -213,7 +213,7 @@ int** generate_puzzle(int rows, int cols) {
             black_count = 13 + rand() % 6; // 4-9 для средних полей, остатки от деления будут варьироваться от 0 до 5
         }
         else {
-            black_count = 18; // 6-13 для больших полей, остатки от деления будут варьироваться от 0 до 7
+            black_count = 16 + rand() % 8; // 6-13 для больших полей, остатки от деления будут варьироваться от 0 до 7
         }
 
         Point* blacks = (Point*)malloc(black_count * sizeof(Point));
