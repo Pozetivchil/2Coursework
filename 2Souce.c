@@ -227,10 +227,10 @@ int** generate_puzzle(int rows, int cols) {
                 }
             }
             else if (puzzle[i][j] == EMPTY) {
-                puzzle[i][j] = WHITE;  // EMPTY -> WHITE (0)
+                puzzle[i][j] = WHITE;
             }
-            else if (puzzle[i][j] > 0) { // Часть линии
-                puzzle[i][j] = WHITE;  // Линия -> WHITE (0)
+            else if (puzzle[i][j] > 0) {
+                puzzle[i][j] = WHITE;
             }
         }
     }
@@ -241,12 +241,12 @@ int** generate_puzzle(int rows, int cols) {
     return puzzle;
 }
 
-// Улучшенный вывод поля на экран с ASCII-арт
+// Вывод поля на экран с ASCII-арт
 void print_field(int** field, int rows, int cols) {
     // Верхняя граница
     printf("+");
     for (int j = 0; j < cols; j++) {
-        printf("---+");
+        printf("-----+");
     }
     printf("\n");
 
@@ -254,17 +254,17 @@ void print_field(int** field, int rows, int cols) {
         printf("|");
         for (int j = 0; j < cols; j++) {
             if (field[i][j] == WHITE) {  // WHITE = 0
-                printf(" * |");
+                printf("     |");
             }
             else {
-                printf(" %2d|", field[i][j]);
+                printf(" %2d  |", field[i][j]);
             }
         }
         printf("\n");
         // Граница между строками
         printf("+");
         for (int j = 0; j < cols; j++) {
-            printf("---+");
+            printf("-----+");
         }
         printf("\n");
     }
@@ -312,6 +312,7 @@ int is_basically_solvable(int** puzzle, int rows, int cols) {
 
 int main() {
     setlocale(LC_ALL, "RUS");
+    system("chcp 1251");
 
     srand(time(NULL));
     int rows, cols;
@@ -360,7 +361,11 @@ int main() {
                     }
                     else {
                         // Убираем символ новой строки
-                        filename[strcspn(filename, "\n")] = 0;
+                        int i = 0;
+                        while (filename[i] != '\n' && filename[i] != '\0') {
+                            i++;
+                        }
+                        filename[i] = '\0';
                     }
 
                     save_to_file(puzzle, rows, cols, filename);
@@ -382,7 +387,6 @@ int main() {
     if (generated > 0) {
         printf("\n%s\n", "=======================================================");
         printf("Успешно сгенерировано %d полей!\n", generated);
-        printf("Файлы сохранены в текущей директории.\n");
     }
     else {
         printf("\nНе удалось сгенерировать ни одного поля за %d попыток.\n", attempts);
