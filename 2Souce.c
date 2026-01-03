@@ -7,7 +7,7 @@
 #define EMPTY 0
 #define BLACK -1
 #define WHITE 0
-#define MAX_ATTEMPTS 100000000
+#define MAX_ATTEMPTS 100000000 // Отформатированное значение для наг100 000 000
 
 typedef struct {
     int x;
