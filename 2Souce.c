@@ -7,7 +7,7 @@
 #define EMPTY 0
 #define BLACK -1
 #define WHITE 0
-#define MAX_ATTEMPTS 50000
+#define MAX_ATTEMPTS 5000
 
 typedef struct {
     int x;
@@ -55,18 +55,6 @@ void free_field(int** field, int rows) {
 // Проверка, валидны ли координаты (в пределах поля)
 int is_valid(int x, int y, int rows, int cols) {
     return (x >= 0 && x < rows && y >= 0 && y < cols);
-}
-
-// Проверка, можно ли разместить чёрную клетку (не рядом с другой чёрной)
-int can_place_black(int** field, int x, int y, int rows, int cols) {
-    for (int i = 0; i < 4; i++) {
-        int nx = x + directions[i].dx;
-        int ny = y + directions[i].dy;
-        if (is_valid(nx, ny, rows, cols) && field[nx][ny] == BLACK) {
-            return 0; // Нельзя, рядом чёрная
-        }
-    }
-    return 1; // Можно
 }
 
 // Функция для проверки, свободна ли клетка для линии
@@ -194,6 +182,32 @@ int verify_black_cells(int** solution, int rows, int cols, Point* blacks, int bl
     return 1; // Числа корректны
 }
 
+// Проверка решаемости головоломки - правильная версия
+int is_solvable_improved(int** puzzle, int rows, int cols) {
+    // Подсчитываем общее количество белых клеток
+    int total_white_cells = 0;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (puzzle[i][j] == WHITE) {
+                total_white_cells++;
+            }
+        }
+    }
+
+    // Проверяем, достаточно ли общей длины линий для покрытия всех белых клеток
+    int total_line_length = 0;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (puzzle[i][j] > 0) { // Черная клетка с числом
+                total_line_length += puzzle[i][j];
+            }
+        }
+    }
+
+    // Проверяем базовое условие
+    return (total_line_length >= total_white_cells);
+}
+
 // Генерация головоломки
 int** generate_puzzle(int rows, int cols) {
     int attempts = 0;
@@ -204,16 +218,16 @@ int** generate_puzzle(int rows, int cols) {
         // Количество чёрных клеток зависит от размера поля
         int black_count;
         if (rows * cols == 9) {
-            black_count = 3; // 3-6 для маленьких полей, остатки от деления будут варьироваться от 0 до 3
+            black_count = 3;
         }
-        else if (rows * cols <= 25) { 
-            black_count = 3 + rand() % 4; // 3-6 для маленьких полей, остатки от деления будут варьироваться от 0 до 3
+        else if (rows * cols <= 25) {
+            black_count = 3 + rand() % 4;
         }
         else if (rows * cols <= 64) {
-            black_count = 13 + rand() % 6; // 4-9 для средних полей, остатки от деления будут варьироваться от 0 до 5
+            black_count = 13 + rand() % 6; 
         }
         else {
-            black_count = 16 + rand() % 8; // 6-13 для больших полей, остатки от деления будут варьироваться от 0 до 7
+            black_count = 20;
         }
 
         Point* blacks = (Point*)malloc(black_count * sizeof(Point));
@@ -223,12 +237,11 @@ int** generate_puzzle(int rows, int cols) {
         int placement_attempts = 0;
         int max_placement_attempts = rows * cols * 10;
 
-        // Размещаем чёрные клетки
         while (placed < black_count && placement_attempts < max_placement_attempts) {
             int x = rand() % rows;
             int y = rand() % cols;
 
-            if (solution[x][y] == EMPTY && can_place_black(solution, x, y, rows, cols)) {
+            if (solution[x][y] == EMPTY) {
                 solution[x][y] = BLACK;
                 blacks[placed].x = x;
                 blacks[placed].y = y;
@@ -261,7 +274,6 @@ int** generate_puzzle(int rows, int cols) {
 
             // Рисуем линии в 2-4 направлениях
             int lines_to_draw = 2 + rand() % 3;
-            if (lines_to_draw > 4) lines_to_draw = 4;
 
             for (int j = 0; j < lines_to_draw; j++) {
                 Direction dir = directions[dirs[j]];
@@ -372,27 +384,6 @@ void print_field(int** field, int rows, int cols) {
     }
 }
 
-// Функция для проверки решаемости головоломки (упрощенная версия)
-int is_solvable(int** puzzle, int rows, int cols) {
-    int total_black_numbers = 0;
-    int total_white_cells = 0;
-
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            if (puzzle[i][j] > 0) { // Черная клетка с числом
-                total_black_numbers += puzzle[i][j];
-            }
-            else if (puzzle[i][j] == WHITE) {
-                total_white_cells++;
-            }
-        }
-    }
-
-    // Базовая проверка: сумма чисел должна быть >= количеству белых клеток
-    // (может быть больше из-за пересечений, которые разрешены в нашей генерации)
-    return (total_black_numbers >= total_white_cells);
-}
-
 // Функция: запись поля в файл
 void save_to_file(int** field, int rows, int cols, const char* filename) {
     FILE* file = fopen(filename, "w");
@@ -442,7 +433,7 @@ int main() {
 
         int** puzzle = generate_puzzle(rows, cols);
         if (puzzle != NULL) {
-            if (is_solvable(puzzle, rows, cols)) {
+            if (is_solvable_improved(puzzle, rows, cols)) {
                 printf("\nПоле %d (сгенерировано успешно):\n", generated + 1);
                 print_field(puzzle, rows, cols);
 
