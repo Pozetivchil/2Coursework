@@ -9,12 +9,14 @@
 #define WHITE 0
 #define MAX_ATTEMPTS 100000000
 
-typedef struct {
+typedef struct
+{
     int x;
     int y;
 } Point;
 
-typedef struct {
+typedef struct
+{
     int dx;
     int dy;
 } Direction;
@@ -34,26 +36,49 @@ int print_field(int** field, int rows, int cols);
 int save_to_file(int** field, int rows, int cols, char* filename);
 int is_solvable(int** puzzle, int rows, int cols);
 
-int main() {
+/**
+* Главная функция программы
+* Выполняет инициализацию, выводит шапку и запускает циклическое меню
+* @return 0 при нормальном завершении программы
+*/
+int main()
+{
+    int running = 1, choice;
+
     setlocale(LC_ALL, "RUS");
     system("chcp 1251");
 
     srand((unsigned)time(NULL));
 
-    int running = 1;
+    printf("============================================================\n");
+    printf("Вас приветствует программа-генератор игровых полей\n");
+    printf("головоломки «Роза ветров»\n");
+    printf("\n");
+    printf("Назначение: генераировать 3 поля по заданным размерам,\n");
+    printf("выводить их на экран и сохранять выбранные варианты в файл.\n");
+    printf("\n");
+    printf("Исполнитель: Григорян Э.Г.\n");
+    printf("Группа: бТИИ-251\n");
+    printf("Преподаватель: Минакова О.В.\n");
+    printf("Год: 2025-2026\n");
+    printf("============================================================\n\n");
 
-    while (running) {
-        int choice = show_menu();
+    while (running)
+    {
+        choice = show_menu();
 
-        if (choice == 1) {
-            printf("Выход из программы.\n");
+        if (choice == 1)
+        {
+            printf("\nВыход из программы.\n");
             running = 0;
         }
-        else if (choice == 2) {
+        else if (choice == 2)
+        {
             run_generator();
         }
-        else {
-            printf("Введите 1 или 2.\n");
+        else
+        {
+            printf("\nОшибка: выберите пункт 1 или 2.\n");
         }
     }
 
@@ -61,53 +86,64 @@ int main() {
 }
 
 /**
-* Удаление символов конца строки из строки 
-* Используется после fgets() для корректного имени файла
-* @param s - строка, из которой удаляется "\\n" и "\r"
+* Удаляет символы конца строки '\n' и '\r' из строки
+* Используется после fgets(), чтобы корректно обработать имя файла
+* @param s строка для обработки
 * @return 0
 */
-int trim_newline(char* s) {
-    int i = 0;
-    while (s[i] != '\0') {
-        if (s[i] == '\n' || s[i] == '\r') {
+int trim_newline(char* s)
+{
+    int i;
+
+    i = 0;
+    while (s[i] != '\0')
+    {
+        if (s[i] == '\n' || s[i] == '\r')
+        {
             s[i] = '\0';
             break;
         }
         i++;
     }
+
     return 0;
 }
 
 /**
-* Дочитывание ввода до конца строки "\\n" 
-* Используется после scanf(), чтобы убрать остаток строки из буфера
+* Дочитывает ввод до символа '\n'
+* Используется после scanf(), чтобы очистить буфер ввода
 * @return 0
 */
-int flush_line() {
+int flush_line()
+{
     int c;
+
     c = getchar();
     while (c != '\n')
     {
         c = getchar();
     }
+
     return 0;
 }
 
 /**
-* Вывод меню и считывание выбора пользователя
-* @return 1 если выбран выход, 2 если выбран запуск генератора, иначе другое значение
+* Выводит главное меню и считывает выбор пользователя
+* @return введённый пользователем пункт меню (ожидается 1 или 2)
 */
-int show_menu() {
-    int choice = 0;
+int show_menu()
+{
+    int choice;
+
+    choice = 0;
 
     printf("\n");
-    printf("===================================\n");
-    printf("Меню\n");
-    printf("===================================\n");
+    printf("Главное меню\n");
+    printf("----------------------------------------\n");
     printf("1. Выйти из программы\n");
     printf("2. Генерировать игровые поля\n");
-    printf("-----------------------------------\n");
-    printf("Ваш выбор: ");
+    printf("----------------------------------------\n");
+    printf("Выберите пункт (1-2): ");
 
     scanf("%d", &choice);
     flush_line();
@@ -116,225 +152,287 @@ int show_menu() {
 }
 
 /**
-* Генерация полей
-* Запрашивает размеры, генерирует 3 поля, показывает их и сохраняет выбранные пользователем
-* @return 0 если сгенерировано хотя бы одно поле, -1 если не удалось сгенерировать ни одного поля
+* Запускает режим генерации игровых полей
+* Запрашивает размеры поля, затем формирует и сохраняет 3 поля
+* После сохранения 3 полей выполняется возврат в меню
+* @return 0
 */
-int run_generator() {
-    int rows = 0, cols = 0;
-    int ok = 0;
+int run_generator()
+{
+    int rows = 0, cols = 0, is_data_ok = 0, generated = 0, attempts = 0;
 
-    printf("\nГенератор головоломки 'Роза ветров'\n");
-    printf("===================================\n\n");
+    printf("\nРежим: генерация игровых полей\n");
+    printf("----------------------------------------\n");
 
-    while (ok == 0) {
-        rows = 0;
-        cols = 0;
-
+    while (is_data_ok == 0)
+    {
         printf("Введите размеры поля (строки и столбцы, от 3 до 12): ");
         scanf("%d %d", &rows, &cols);
         flush_line();
 
-        if (rows < 3 || cols < 3 || rows > 12 || cols > 12) {
-            printf("Ошибка: размеры должны быть в диапазоне от 3 до 12.\n\n");
+        if (rows < 3 || cols < 3 || rows > 12 || cols > 12)
+        {
+            printf("Ошибка: размеры должны быть в диапазоне от 3 до 12.\n");
         }
-        else {
-            ok = 1;
+        else
+        {
+            is_data_ok = 1;
         }
     }
 
-    printf("\nГенерация 3 полей для головоломки %dx%d...\n\n", rows, cols);
+    printf("\nПараметры приняты: %d x %d\n", rows, cols);
+    printf("Начинается генерация 3 полей...\n");
 
-    int generated = 0;
-    int attempts = 0;
-
-    while (generated < 3 && attempts < MAX_ATTEMPTS) {
+    while (generated < 3 && attempts < MAX_ATTEMPTS)
+    {
         attempts++;
-
         int** puzzle = generate_puzzle(rows, cols);
 
-        if (puzzle != NULL) {
-            if (is_solvable(puzzle, rows, cols)) {
+        if (puzzle != NULL)
+        {
+            if (is_solvable(puzzle, rows, cols))
+            {
+                int accepted = 0;
+                char yn;
 
-                printf("\nПоле %d (попытка %d):\n", generated + 1, attempts);
+                printf("\n========================================\n");
+                printf("Поле %d из 3 (попытка %d)\n", generated + 1, attempts);
+                printf("========================================\n");
                 print_field(puzzle, rows, cols);
 
-                int accepted = 0;
-
-                while (accepted == 0) {
-                    char choice = 'n';
-
+                while (accepted == 0)
+                {
                     printf("\nПоле подходит? (y/n): ");
-                    scanf(" %c", &choice);
+                    scanf(" %c", &yn);
                     flush_line();
 
-                    if (choice == 'n' || choice == 'N') {
+                    if (yn == 'n' || yn == 'N')
+                    {
+                        printf("Вариант отклонён. Генерация нового варианта...\n");
                         accepted = 1;
                     }
-                    else if (choice == 'y' || choice == 'Y') {
-                        char filename[50];
+                    else if (yn == 'y' || yn == 'Y')
+                    {
+                        int saved = 0;
 
-                        printf("Введите имя файла (или нажмите Enter для puzzle%d.txt): ", generated + 1);
-                        fgets(filename, sizeof(filename), stdin);
+                        while (saved == 0)
+                        {
+                            char filename[50];
 
-                        if (filename[0] == '\n') {
-                            sprintf(filename, "puzzle%d.txt", generated + 1);
-                        }
-                        else {
-                            trim_newline(filename);
-                        }
+                            printf("Введите имя файла (Enter — puzzle%d.txt): ", generated + 1);
+                            fgets(filename, sizeof(filename), stdin);
 
-                        if (save_to_file(puzzle, rows, cols, filename) == 0) {
-                            generated++;
+                            if (filename[0] == '\n')
+                            {
+                                strcpy(filename, "puzzle0.txt");
+                                filename[6] = (char)('0' + (generated + 1));
+                            }
+                            else
+                            {
+                                trim_newline(filename);
+                            }
 
-                            if (generated < 3) {
-                                printf("\n%s\n", "=======================================================");
+                            if (save_to_file(puzzle, rows, cols, filename) == 0)
+                            {
+                                saved = 1;
+                            }
+                            else
+                            {
+                                printf("Не удалось сохранить поле. Попробуйте другое имя файла.\n");
                             }
                         }
-                        else {
-                            printf("Не удалось сохранить поле. Попробуйте другое имя файла.\n");
-                        }
 
+                        generated++;
                         accepted = 1;
                     }
-                    else {
-                        printf("Введите только y или n.\n");
+                    else
+                    {
+                        printf("Ошибка: введите только y или n.\n");
                     }
                 }
+            }
 
-                free_field(puzzle, rows);
-            }
-            else {
-                free_field(puzzle, rows);
-            }
+            free_field(puzzle, rows);
         }
     }
 
-    if (generated > 0) {
-        printf("\n%s\n", "=======================================================");
-        printf("Успешно сгенерировано %d полей!\n", generated);
-        printf("Возврат в меню...\n");
-        return 0;
+    printf("\n----------------------------------------\n");
+    printf("Сохранено полей: %d\n", generated);
+
+    if (generated == 3)
+    {
+        printf("Успешно сформирован набор из 3 полей.\n");
+    }
+    else
+    {
+        printf("Сформирован неполный набор полей.\n");
     }
 
-    printf("\nНе удалось сгенерировать ни одного поля.\nПопробуйте уменьшить размеры поля.\n");
     printf("Возврат в меню...\n");
-    return -1;
+
+    return 0;
 }
 
 /**
-* Создание динамического двумерного массива для игрового поля
-* @param rows - количество строк
-* @param cols - количество столбцов
-* @return указатель на поле (int**), либо NULL если память выделить не удалось
+* Создаёт динамическое поле (матрицу) заданного размера
+* Все клетки инициализируются значением EMPTY
+* @param rows количество строк
+* @param cols количество столбцов
+* @return указатель на поле (int**), либо NULL при ошибке выделения памяти
 */
-int** create_field(int rows, int cols) {
-    int** field = (int**)malloc(rows * sizeof(int*));
-    if (field == NULL) {
+int** create_field(int rows, int cols)
+{
+    int** field;
+    int i;
+    int j;
+
+    field = (int**)malloc(rows * sizeof(int*));
+    if (field == NULL)
+    {
         printf("Ошибка выделения памяти для поля\n");
         return NULL;
     }
 
-    for (int i = 0; i < rows; i++) {
+    for (i = 0; i < rows; i++)
+    {
         field[i] = (int*)malloc(cols * sizeof(int));
-        if (field[i] == NULL) {
+        if (field[i] == NULL)
+        {
             printf("Ошибка выделения памяти для строки поля\n");
-            for (int j = 0; j < i; j++) {
+
+            for (j = 0; j < i; j++)
+            {
                 free(field[j]);
             }
+
             free(field);
             return NULL;
         }
 
-        for (int j = 0; j < cols; j++) {
+        for (j = 0; j < cols; j++)
+        {
             field[i][j] = EMPTY;
         }
     }
+
     return field;
 }
 
 /**
-* Освобождение памяти, выделенной под поле
-* @param field - указатель на поле
-* @param rows - количество строк
+* Освобождает память, выделенную под поле
+* @param field указатель на поле
+* @param rows количество строк (сколько строк освобождать)
 * @return 0
 */
-int free_field(int** field, int rows) {
-    if (field == NULL) {
+int free_field(int** field, int rows)
+{
+    int i;
+
+    if (field == NULL)
+    {
         return 0;
     }
 
-    for (int i = 0; i < rows; i++) {
-        if (field[i] != NULL) {
+    for (i = 0; i < rows; i++)
+    {
+        if (field[i] != NULL)
+        {
             free(field[i]);
         }
     }
+
     free(field);
     return 0;
 }
 
 /**
-* Проверка, что координаты клетки попадают в границы поля
-* @param x - координата строки
-* @param y - координата столбца
-* @param rows - количество строк
-* @param cols - количество столбцов
-* @return 1 если координаты валидны, 0 если выходят за границы
+* Проверяет, что координаты клетки находятся в пределах поля
+* @param x индекс строки
+* @param y индекс столбца
+* @param rows количество строк
+* @param cols количество столбцов
+* @return 1 если координаты корректны, 0 если выходят за границы
 */
-int is_valid(int x, int y, int rows, int cols) {
+int is_valid(int x, int y, int rows, int cols)
+{
     return (x >= 0 && x < rows && y >= 0 && y < cols);
 }
 
 /**
-* Проверка возможности проведения линии через указанную клетку
-* @param field - текущее состояние игрового поля
-* @param x - координата строки проверяемой клетки
-* @param y - координата столбца проверяемой клетки
-* @param rows - количество строк в поле
-* @param cols - количество столбцов в поле
-* @return 1 если клетка пуста (EMPTY), 0 если занята или невалидна
+* Проверяет, свободна ли клетка для продолжения линии
+* @param field игровое поле
+* @param x индекс строки
+* @param y индекс столбца
+* @param rows количество строк
+* @param cols количество столбцов
+* @return 1 если клетка валидна и EMPTY, иначе 0
 */
-int is_cell_available_for_line(int** field, int x, int y, int rows, int cols) {
+int is_cell_available_for_line(int** field, int x, int y, int rows, int cols)
+{
     if (!is_valid(x, y, rows, cols))
+    {
         return 0;
-    return (field[x][y] == EMPTY);
+    }
+
+    if (field[x][y] == EMPTY)
+    {
+        return 1;
+    }
+
+    return 0;
 }
 
 /**
-* Проведение линии от черной клетки в выбранном направлении
-* Линия проводится по пустым клеткам и отмечается идентификатором id
-* @param field - поле
-* @param x - координата строки стартовой (черной) клетки
-* @param y - координата столбца стартовой (черной) клетки
-* @param dir - направление (dx, dy)
-* @param rows - количество строк
-* @param cols - количество столбцов
-* @param id - идентификатор линии (обычно i+1)
-* @return длина проведённой линии (количество закрашенных клеток), 0 если провести нельзя
+* Проводит линию от чёрной клетки в заданном направлении по пустым клеткам
+* Длина линии выбирается случайно в пределах доступной длины
+* Клетки линии помечаются значением id
+* @param field игровое поле
+* @param x индекс строки стартовой (чёрной) клетки
+* @param y индекс столбца стартовой (чёрной) клетки
+* @param dir направление (dx, dy)
+* @param rows количество строк
+* @param cols количество столбцов
+* @param id идентификатор линии (число, которым помечаются клетки линии)
+* @return длина проведённой линии (количество закрашенных клеток), либо 0 если провести линию нельзя
 */
-int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int id) {
-    int len = 0;
+int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int id)
+{
+    int len;
+    int cx;
+    int cy;
+    int available_len;
+    int max_len;
+    int i;
 
-    int cx = x + dir.dx;
-    int cy = y + dir.dy;
+    len = 0;
 
-    int available_len = 0;
-    while (is_cell_available_for_line(field, cx, cy, rows, cols)) {
+    cx = x + dir.dx;
+    cy = y + dir.dy;
+
+    available_len = 0;
+
+    while (is_cell_available_for_line(field, cx, cy, rows, cols))
+    {
         available_len++;
         cx += dir.dx;
         cy += dir.dy;
     }
 
-    if (available_len == 0) return 0;
+    if (available_len == 0)
+    {
+        return 0;
+    }
 
-    int max_len = 1 + rand() % available_len;
+    max_len = 1 + rand() % available_len;
 
     cx = x + dir.dx;
     cy = y + dir.dy;
 
-    for (int i = 0; i < max_len; i++) {
+    for (i = 0; i < max_len; i++)
+    {
         field[cx][cy] = id;
         len++;
+
         cx += dir.dx;
         cy += dir.dy;
     }
@@ -343,84 +441,125 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
 }
 
 /**
-* Проверка, что в поле не осталось пустых клеток EMPTY
-* @param field - поле
-* @param rows - количество строк
-* @param cols - количество столбцов
+* Проверяет, что поле полностью покрыто (не осталось EMPTY клеток)
+* @param field игровое поле
+* @param rows количество строк
+* @param cols количество столбцов
 * @return 1 если пустых клеток нет, 0 если есть хотя бы одна EMPTY
 */
-int is_fully_covered(int** field, int rows, int cols) {
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            if (field[i][j] == EMPTY) {
+int is_fully_covered(int** field, int rows, int cols)
+{
+    int i;
+    int j;
+
+    for (i = 0; i < rows; i++)
+    {
+        for (j = 0; j < cols; j++)
+        {
+            if (field[i][j] == EMPTY)
+            {
                 return 0;
             }
         }
     }
+
     return 1;
 }
 
 /**
-* Генерация одного игрового поля головоломки
-* Создаёт поле, размещает черные клетки, проводит линии и преобразует поле в формат (WHITE и числа в черных клетках)
-* @param rows - количество строк
-* @param cols - количество столбцов
+* Генерирует одно игровое поле головоломки «Роза ветров»
+* 1) создаёт пустое поле
+* 2) размещает чёрные клетки
+* 3) пытается провести линии от каждой чёрной клетки
+* 4) проверяет покрытие поля
+* 5) преобразует поле в формат: WHITE (0) и числа в чёрных клетках
+* @param rows количество строк
+* @param cols количество столбцов
 * @return указатель на сгенерированное поле, либо NULL если генерация не удалась
 */
-int** generate_puzzle(int rows, int cols) {
+int** generate_puzzle(int rows, int cols)
+{
     Direction directions_local[4] = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
 
-    int** puzzle = create_field(rows, cols);
-    if (puzzle == NULL) {
+    int** puzzle;
+
+    int black_count;
+    int area;
+
+    Point* blacks;
+    int* lengths;
+
+    int placed;
+    int i;
+    int j;
+
+    puzzle = create_field(rows, cols);
+    if (puzzle == NULL)
+    {
         return NULL;
     }
 
-    int black_count = 0;
-    int area = rows * cols;
+    black_count = 0;
+    area = rows * cols;
 
-    if (area <= 25) {
+    if (area <= 25)
+    {
         black_count = 3 + rand() % 3;
     }
-    else if (area <= 64) {
+    else if (area <= 64)
+    {
         black_count = 9 + rand() % 4;
     }
-    else if (area <= 81) {
+    else if (area <= 81)
+    {
         black_count = 15 + rand() % 5;
     }
-    else if (area <= 100) {
+    else if (area <= 100)
+    {
         black_count = 36 + rand() % 6;
     }
-    else if (area <= 121) {
+    else if (area <= 121)
+    {
         black_count = 45 + rand() % 7;
     }
-    else if (area <= 144) {
+    else if (area <= 144)
+    {
         black_count = 56 + rand() % 8;
     }
-    else {
+    else
+    {
         black_count = 3;
     }
 
-    Point* blacks = (Point*)malloc(black_count * sizeof(Point));
-    if (blacks == NULL) {
+    blacks = (Point*)malloc(black_count * sizeof(Point));
+    if (blacks == NULL)
+    {
         printf("Ошибка выделения памяти для черных клеток\n");
         free_field(puzzle, rows);
         return NULL;
     }
 
-    int* lengths = (int*)calloc(black_count, sizeof(int));
-    if (lengths == NULL) {
+    lengths = (int*)calloc(black_count, sizeof(int));
+    if (lengths == NULL)
+    {
         printf("Ошибка выделения памяти для длин линий\n");
         free(blacks);
         free_field(puzzle, rows);
         return NULL;
     }
 
-    int placed = 0;
-    while (placed < black_count) {
-        int x = rand() % rows;
-        int y = rand() % cols;
+    placed = 0;
 
-        if (puzzle[x][y] == EMPTY) {
+    while (placed < black_count)
+    {
+        int x;
+        int y;
+
+        x = rand() % rows;
+        y = rand() % cols;
+
+        if (puzzle[x][y] == EMPTY)
+        {
             puzzle[x][y] = BLACK;
             blacks[placed].x = x;
             blacks[placed].y = y;
@@ -428,23 +567,33 @@ int** generate_puzzle(int rows, int cols) {
         }
     }
 
-    for (int i = 0; i < black_count; i++) {
+    for (i = 0; i < black_count; i++)
+    {
         int dirs[4] = { 0, 1, 2, 3 };
+        int d;
+        int temp;
+        int k;
 
-        for (int j = 0; j < 4; j++) {
-            int k = rand() % 4;
-            int temp = dirs[j];
+        for (j = 0; j < 4; j++)
+        {
+            k = rand() % 4;
+            temp = dirs[j];
             dirs[j] = dirs[k];
             dirs[k] = temp;
         }
 
-        for (int d = 0; d < 4; d++) {
-            Direction dir = directions_local[dirs[d]];
-            int line_len = draw_line(puzzle, blacks[i].x, blacks[i].y, dir, rows, cols, i + 1);
+        for (d = 0; d < 4; d++)
+        {
+            Direction dir;
+            int line_len;
+
+            dir = directions_local[dirs[d]];
+            line_len = draw_line(puzzle, blacks[i].x, blacks[i].y, dir, rows, cols, i + 1);
             lengths[i] += line_len;
         }
 
-        if (lengths[i] <= 0) {
+        if (lengths[i] <= 0)
+        {
             free(blacks);
             free(lengths);
             free_field(puzzle, rows);
@@ -452,25 +601,33 @@ int** generate_puzzle(int rows, int cols) {
         }
     }
 
-    if (!is_fully_covered(puzzle, rows, cols)) {
+    if (!is_fully_covered(puzzle, rows, cols))
+    {
         free(blacks);
         free(lengths);
         free_field(puzzle, rows);
         return NULL;
     }
 
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
+    for (i = 0; i < rows; i++)
+    {
+        for (j = 0; j < cols; j++)
+        {
+            if (puzzle[i][j] == BLACK)
+            {
+                int k;
 
-            if (puzzle[i][j] == BLACK) {
-                for (int k = 0; k < black_count; k++) {
-                    if (blacks[k].x == i && blacks[k].y == j) {
+                for (k = 0; k < black_count; k++)
+                {
+                    if (blacks[k].x == i && blacks[k].y == j)
+                    {
                         puzzle[i][j] = lengths[k];
                         break;
                     }
                 }
             }
-            else {
+            else
+            {
                 puzzle[i][j] = WHITE;
             }
         }
@@ -483,34 +640,44 @@ int** generate_puzzle(int rows, int cols) {
 }
 
 /**
-* Вывод игрового поля в консоль в виде таблицы
-* Белые клетки выводятся пустыми, чёрные клетки выводятся числом
-* @param field - поле
-* @param rows - количество строк
-* @param cols - количество столбцов
+* Выводит игровое поле в консоль в виде ASCII-таблицы
+* WHITE выводится как пустая клетка, числа выводятся в чёрных клетках
+* @param field игровое поле
+* @param rows количество строк
+* @param cols количество столбцов
 * @return 0
 */
-int print_field(int** field, int rows, int cols) {
+int print_field(int** field, int rows, int cols)
+{
+    int i;
+    int j;
+
     printf("+");
-    for (int j = 0; j < cols; j++) {
+    for (j = 0; j < cols; j++)
+    {
         printf("-----+");
     }
     printf("\n");
 
-    for (int i = 0; i < rows; i++) {
+    for (i = 0; i < rows; i++)
+    {
         printf("|");
-        for (int j = 0; j < cols; j++) {
-            if (field[i][j] == WHITE) {
+        for (j = 0; j < cols; j++)
+        {
+            if (field[i][j] == WHITE)
+            {
                 printf("     |");
             }
-            else {
+            else
+            {
                 printf(" %2d  |", field[i][j]);
             }
         }
         printf("\n");
 
         printf("+");
-        for (int j = 0; j < cols; j++) {
+        for (j = 0; j < cols; j++)
+        {
             printf("-----+");
         }
         printf("\n");
@@ -520,56 +687,81 @@ int print_field(int** field, int rows, int cols) {
 }
 
 /**
-* Сохранение поля в текстовый файл
-* Формат: первая строка "rows cols", далее матрица значений
-* @param field - поле
-* @param rows - количество строк
-* @param cols - количество столбцов
-* @param filename - имя файла для сохранения
-* @return 0 если сохранение успешно, -4 если файл открыть не удалось
+* Сохраняет поле в текстовый файл
+* Формат: первая строка "rows cols", далее rows строк по cols чисел
+* @param field игровое поле
+* @param rows количество строк
+* @param cols количество столбцов
+* @param filename имя файла
+* @return 0 при успешном сохранении, -4 если файл открыть не удалось
 */
-int save_to_file(int** field, int rows, int cols, char* filename) {
-    FILE* file = fopen(filename, "w");
-    if (file == NULL) {
+int save_to_file(int** field, int rows, int cols, char* filename)
+{
+    FILE* file;
+    int i;
+    int j;
+
+    file = fopen(filename, "w");
+    if (file == NULL)
+    {
         printf("Ошибка открытия файла!\n");
         return -4;
     }
 
     fprintf(file, "%d %d\n", rows, cols);
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
+
+    for (i = 0; i < rows; i++)
+    {
+        for (j = 0; j < cols; j++)
+        {
             fprintf(file, "%d ", field[i][j]);
         }
         fprintf(file, "\n");
     }
 
     fclose(file);
+
     printf("Поле сохранено в %s\n", filename);
     return 0;
 }
 
 /**
-* Проверка решаемости
-* Проверяется, что сумма чисел в черных клетках равна количеству белых клеток
-* @param puzzle - поле
-* @param rows - количество строк
-* @param cols - количество столбцов
-* @return 1 если проверка пройдена, 0 если не пройдена
+* Выполняет быструю проверку согласованности поля
+* Проверка: сумма чисел в чёрных клетках равна количеству белых клеток (WHITE)
+* @param puzzle игровое поле
+* @param rows количество строк
+* @param cols количество столбцов
+* @return 1 если проверка пройдена, 0 если проверка не пройдена
 */
-int is_solvable(int** puzzle, int rows, int cols) {
-    int total_white = 0;
-    int total_black_numbers = 0;
+int is_solvable(int** puzzle, int rows, int cols)
+{
+    int total_white;
+    int total_black_numbers;
+    int i;
+    int j;
 
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            if (puzzle[i][j] == WHITE) {
+    total_white = 0;
+    total_black_numbers = 0;
+
+    for (i = 0; i < rows; i++)
+    {
+        for (j = 0; j < cols; j++)
+        {
+            if (puzzle[i][j] == WHITE)
+            {
                 total_white++;
             }
-            else if (puzzle[i][j] > 0) {
+            else if (puzzle[i][j] > 0)
+            {
                 total_black_numbers += puzzle[i][j];
             }
         }
     }
 
-    return (total_black_numbers == total_white);
+    if (total_black_numbers == total_white)
+    {
+        return 1;
+    }
+
+    return 0;
 }
