@@ -38,7 +38,7 @@ int main() {
     setlocale(LC_ALL, "RUS");
     system("chcp 1251");
 
-    srand(time(NULL));
+    srand((unsigned)time(NULL));
 
     int running = 1;
 
@@ -60,6 +60,12 @@ int main() {
     return 0;
 }
 
+/**
+* Удаление символов конца строки из строки 
+* Используется после fgets() для корректного имени файла
+* @param s - строка, из которой удаляется "\\n" и "\r"
+* @return 0
+*/
 int trim_newline(char* s) {
     int i = 0;
     while (s[i] != '\0') {
@@ -72,6 +78,11 @@ int trim_newline(char* s) {
     return 0;
 }
 
+/**
+* Дочитывание ввода до конца строки "\\n" 
+* Используется после scanf(), чтобы убрать остаток строки из буфера
+* @return 0
+*/
 int flush_line() {
     int c;
     c = getchar();
@@ -82,6 +93,10 @@ int flush_line() {
     return 0;
 }
 
+/**
+* Вывод меню и считывание выбора пользователя
+* @return 1 если выбран выход, 2 если выбран запуск генератора, иначе другое значение
+*/
 int show_menu() {
     int choice = 0;
 
@@ -100,6 +115,11 @@ int show_menu() {
     return choice;
 }
 
+/**
+* Генерация полей
+* Запрашивает размеры, генерирует 3 поля, показывает их и сохраняет выбранные пользователем
+* @return 0 если сгенерировано хотя бы одно поле, -1 если не удалось сгенерировать ни одного поля
+*/
 int run_generator() {
     int rows = 0, cols = 0;
     int ok = 0;
@@ -202,6 +222,12 @@ int run_generator() {
     return -1;
 }
 
+/**
+* Создание динамического двумерного массива для игрового поля
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @return указатель на поле (int**), либо NULL если память выделить не удалось
+*/
 int** create_field(int rows, int cols) {
     int** field = (int**)malloc(rows * sizeof(int*));
     if (field == NULL) {
@@ -227,6 +253,12 @@ int** create_field(int rows, int cols) {
     return field;
 }
 
+/**
+* Освобождение памяти, выделенной под поле
+* @param field - указатель на поле
+* @param rows - количество строк
+* @return 0
+*/
 int free_field(int** field, int rows) {
     if (field == NULL) {
         return 0;
@@ -241,15 +273,45 @@ int free_field(int** field, int rows) {
     return 0;
 }
 
+/**
+* Проверка, что координаты клетки попадают в границы поля
+* @param x - координата строки
+* @param y - координата столбца
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @return 1 если координаты валидны, 0 если выходят за границы
+*/
 int is_valid(int x, int y, int rows, int cols) {
     return (x >= 0 && x < rows && y >= 0 && y < cols);
 }
 
+/**
+* Проверка возможности проведения линии через указанную клетку
+* @param field - текущее состояние игрового поля
+* @param x - координата строки проверяемой клетки
+* @param y - координата столбца проверяемой клетки
+* @param rows - количество строк в поле
+* @param cols - количество столбцов в поле
+* @return 1 если клетка пуста (EMPTY), 0 если занята или невалидна
+*/
 int is_cell_available_for_line(int** field, int x, int y, int rows, int cols) {
-    if (!is_valid(x, y, rows, cols)) return 0;
+    if (!is_valid(x, y, rows, cols))
+        return 0;
     return (field[x][y] == EMPTY);
 }
 
+/**
+* Проведение линии от черной клетки в выбранном направлении
+* Линия проводится по пустым клеткам и отмечается идентификатором id
+* @param field - поле
+* @param x - координата строки стартовой (черной) клетки
+* @param y - координата столбца стартовой (черной) клетки
+* @param dir - направление (dx, dy)
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @param id - идентификатор линии (обычно i+1)
+* @return длина проведённой линии (количество закрашенных клеток), 0 если провести нельзя
+*/
 int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int id) {
     int len = 0;
 
@@ -280,6 +342,13 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
     return len;
 }
 
+/**
+* Проверка, что в поле не осталось пустых клеток EMPTY
+* @param field - поле
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @return 1 если пустых клеток нет, 0 если есть хотя бы одна EMPTY
+*/
 int is_fully_covered(int** field, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -291,6 +360,13 @@ int is_fully_covered(int** field, int rows, int cols) {
     return 1;
 }
 
+/**
+* Генерация одного игрового поля головоломки
+* Создаёт поле, размещает черные клетки, проводит линии и преобразует поле в формат (WHITE и числа в черных клетках)
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @return указатель на сгенерированное поле, либо NULL если генерация не удалась
+*/
 int** generate_puzzle(int rows, int cols) {
     Direction directions_local[4] = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
 
@@ -406,6 +482,14 @@ int** generate_puzzle(int rows, int cols) {
     return puzzle;
 }
 
+/**
+* Вывод игрового поля в консоль в виде таблицы
+* Белые клетки выводятся пустыми, чёрные клетки выводятся числом
+* @param field - поле
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @return 0
+*/
 int print_field(int** field, int rows, int cols) {
     printf("+");
     for (int j = 0; j < cols; j++) {
@@ -435,6 +519,15 @@ int print_field(int** field, int rows, int cols) {
     return 0;
 }
 
+/**
+* Сохранение поля в текстовый файл
+* Формат: первая строка "rows cols", далее матрица значений
+* @param field - поле
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @param filename - имя файла для сохранения
+* @return 0 если сохранение успешно, -4 если файл открыть не удалось
+*/
 int save_to_file(int** field, int rows, int cols, char* filename) {
     FILE* file = fopen(filename, "w");
     if (file == NULL) {
@@ -455,6 +548,14 @@ int save_to_file(int** field, int rows, int cols, char* filename) {
     return 0;
 }
 
+/**
+* Проверка решаемости
+* Проверяется, что сумма чисел в черных клетках равна количеству белых клеток
+* @param puzzle - поле
+* @param rows - количество строк
+* @param cols - количество столбцов
+* @return 1 если проверка пройдена, 0 если не пройдена
+*/
 int is_solvable(int** puzzle, int rows, int cols) {
     int total_white = 0;
     int total_black_numbers = 0;
