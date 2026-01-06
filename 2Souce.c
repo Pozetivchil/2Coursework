@@ -490,8 +490,6 @@ int** generate_puzzle(int rows, int cols)
     int* lengths;
 
     int placed;
-    int i;
-    int j;
 
     puzzle = create_field(rows, cols);
     if (puzzle == NULL)
@@ -567,14 +565,13 @@ int** generate_puzzle(int rows, int cols)
         }
     }
 
-    for (i = 0; i < black_count; i++)
+    for (int i = 0; i < black_count; i++)
     {
         int dirs[4] = { 0, 1, 2, 3 };
-        int d;
         int temp;
-        int k;
+        int k; 
 
-        for (j = 0; j < 4; j++)
+        for (int j = 0; j < 4; j++)
         {
             k = rand() % 4;
             temp = dirs[j];
@@ -582,7 +579,7 @@ int** generate_puzzle(int rows, int cols)
             dirs[k] = temp;
         }
 
-        for (d = 0; d < 4; d++)
+        for (int d = 0; d < 4; d++)
         {
             Direction dir;
             int line_len;
@@ -609,9 +606,9 @@ int** generate_puzzle(int rows, int cols)
         return NULL;
     }
 
-    for (i = 0; i < rows; i++)
+    for (int i = 0; i < rows; i++)
     {
-        for (j = 0; j < cols; j++)
+        for (int j = 0; j < cols; j++)
         {
             if (puzzle[i][j] == BLACK)
             {
