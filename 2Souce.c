@@ -9,6 +9,10 @@
 #define WHITE 0
 #define MAX_ATTEMPTS 100000000
 
+#define MIN_FIELD_SIZE 3
+#define MAX_FIELD_SIZE 12
+#define DEFAULT_FILENAME_LEN 64
+
 typedef struct
 {
     int x;
@@ -43,12 +47,13 @@ int is_solvable(int** puzzle, int rows, int cols);
 */
 int main()
 {
-    int running = 1, choice;
+    int is_running = 1;
+    int menu_choice = 0;
 
     setlocale(LC_ALL, "RUS");
     system("chcp 1251");
-
-    srand((unsigned)time(NULL));
+    
+    srand(time(NULL));
 
     printf("============================================================\n");
     printf("Вас приветствует программа-генератор игровых полей\n");
@@ -63,16 +68,16 @@ int main()
     printf("Год: 2025-2026\n");
     printf("============================================================\n\n");
 
-    while (running)
+    while (is_running)
     {
-        choice = show_menu();
+        menu_choice = show_menu();
 
-        if (choice == 1)
+        if (menu_choice == 1)
         {
             printf("\nВыход из программы.\n");
-            running = 0;
+            is_running = 0;
         }
-        else if (choice == 2)
+        else if (menu_choice == 2)
         {
             run_generator();
         }
@@ -134,6 +139,7 @@ int flush_line()
 int show_menu()
 {
     int choice;
+    int scan_result;
 
     choice = 0;
 
@@ -145,8 +151,13 @@ int show_menu()
     printf("----------------------------------------\n");
     printf("Выберите пункт (1-2): ");
 
-    scanf("%d", &choice);
+    scan_result = scanf("%d", &choice);
     flush_line();
+
+    if (scan_result != 1)
+    {
+        choice = 0;
+    }
 
     return choice;
 }
@@ -159,7 +170,11 @@ int show_menu()
 */
 int run_generator()
 {
-    int rows = 0, cols = 0, is_data_ok = 0, generated = 0, attempts = 0;
+    int rows = 0;
+    int cols = 0;
+    int is_data_ok = 0;
+    int generated = 0;
+    int attempts = 0;
 
     printf("\nРежим: генерация игровых полей\n");
     printf("----------------------------------------\n");
@@ -170,7 +185,7 @@ int run_generator()
         scanf("%d %d", &rows, &cols);
         flush_line();
 
-        if (rows < 3 || cols < 3 || rows > 12 || cols > 12)
+        if (rows < MIN_FIELD_SIZE || cols < MIN_FIELD_SIZE || rows > MAX_FIELD_SIZE || cols > MAX_FIELD_SIZE)
         {
             printf("Ошибка: размеры должны быть в диапазоне от 3 до 12.\n");
         }
@@ -185,15 +200,16 @@ int run_generator()
 
     while (generated < 3 && attempts < MAX_ATTEMPTS)
     {
+        int** puzzle;
+
         attempts++;
-        int** puzzle = generate_puzzle(rows, cols);
+        puzzle = generate_puzzle(rows, cols);
 
         if (puzzle != NULL)
         {
             if (is_solvable(puzzle, rows, cols))
             {
                 int accepted = 0;
-                char yn;
 
                 printf("\n========================================\n");
                 printf("Поле %d из 3 (попытка %d)\n", generated + 1, attempts);
@@ -202,6 +218,8 @@ int run_generator()
 
                 while (accepted == 0)
                 {
+                    char yn;
+
                     printf("\nПоле подходит? (y/n): ");
                     scanf(" %c", &yn);
                     flush_line();
@@ -217,10 +235,15 @@ int run_generator()
 
                         while (saved == 0)
                         {
-                            char filename[50];
+                            char filename[DEFAULT_FILENAME_LEN];
 
                             printf("Введите имя файла (Enter — puzzle%d.txt): ", generated + 1);
-                            fgets(filename, sizeof(filename), stdin);
+
+                            if (fgets(filename, sizeof(filename), stdin) == NULL)
+                            {
+                                printf("Ошибка ввода имени файла. Попробуйте снова.\n");
+                                continue;
+                            }
 
                             if (filename[0] == '\n')
                             {
@@ -283,8 +306,8 @@ int run_generator()
 int** create_field(int rows, int cols)
 {
     int** field;
-    int i;
-    int j;
+    int row_index;
+    int col_index;
 
     field = (int**)malloc(rows * sizeof(int*));
     if (field == NULL)
@@ -293,25 +316,25 @@ int** create_field(int rows, int cols)
         return NULL;
     }
 
-    for (i = 0; i < rows; i++)
+    for (row_index = 0; row_index < rows; row_index++)
     {
-        field[i] = (int*)malloc(cols * sizeof(int));
-        if (field[i] == NULL)
+        field[row_index] = (int*)malloc(cols * sizeof(int));
+        if (field[row_index] == NULL)
         {
             printf("Ошибка выделения памяти для строки поля\n");
 
-            for (j = 0; j < i; j++)
+            for (col_index = 0; col_index < row_index; col_index++)
             {
-                free(field[j]);
+                free(field[col_index]);
             }
 
             free(field);
             return NULL;
         }
 
-        for (j = 0; j < cols; j++)
+        for (col_index = 0; col_index < cols; col_index++)
         {
-            field[i][j] = EMPTY;
+            field[row_index][col_index] = EMPTY;
         }
     }
 
@@ -326,14 +349,12 @@ int** create_field(int rows, int cols)
 */
 int free_field(int** field, int rows)
 {
-    int i;
-
     if (field == NULL)
     {
         return 0;
     }
 
-    for (i = 0; i < rows; i++)
+    for (int i = 0; i < rows; i++)
     {
         if (field[i] != NULL)
         {
@@ -449,14 +470,14 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
 */
 int is_fully_covered(int** field, int rows, int cols)
 {
-    int i;
-    int j;
+    int row_index;
+    int col_index;
 
-    for (i = 0; i < rows; i++)
+    for (row_index = 0; row_index < rows; row_index++)
     {
-        for (j = 0; j < cols; j++)
+        for (col_index = 0; col_index < cols; col_index++)
         {
-            if (field[i][j] == EMPTY)
+            if (field[row_index][col_index] == EMPTY)
             {
                 return 0;
             }
@@ -529,7 +550,7 @@ int** generate_puzzle(int rows, int cols)
         black_count = 3;
     }
 
-    blacks = (Point*)malloc(black_count * sizeof(Point));
+    blacks = (Point*)malloc((size_t)black_count * sizeof(Point));
     if (blacks == NULL)
     {
         printf("Ошибка выделения памяти для черных клеток\n");
@@ -537,7 +558,7 @@ int** generate_puzzle(int rows, int cols)
         return NULL;
     }
 
-    lengths = (int*)calloc(black_count, sizeof(int));
+    lengths = (int*)calloc((size_t)black_count, sizeof(int));
     if (lengths == NULL)
     {
         printf("Ошибка выделения памяти для длин линий\n");
@@ -569,11 +590,10 @@ int** generate_puzzle(int rows, int cols)
     {
         int dirs[4] = { 0, 1, 2, 3 };
         int temp;
-        int k; 
-
+        
         for (int j = 0; j < 4; j++)
         {
-            k = rand() % 4;
+            int k = rand() % 4;
             temp = dirs[j];
             dirs[j] = dirs[k];
             dirs[k] = temp;
@@ -612,9 +632,7 @@ int** generate_puzzle(int rows, int cols)
         {
             if (puzzle[i][j] == BLACK)
             {
-                int k;
-
-                for (k = 0; k < black_count; k++)
+                for (int k = 0; k < black_count; k++)
                 {
                     if (blacks[k].x == i && blacks[k].y == j)
                     {
