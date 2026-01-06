@@ -103,7 +103,7 @@ int trim_newline(char* s)
     i = 0;
     while (s[i] != '\0')
     {
-        if (s[i] == '\n' || s[i] == '\r')
+        if (s[i] == '\n')
         {
             s[i] = '\0';
             break;
@@ -423,8 +423,7 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
     int cy;
     int available_len;
     int max_len;
-    int i;
-
+    
     len = 0;
 
     cx = x + dir.dx;
@@ -449,7 +448,7 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
     cx = x + dir.dx;
     cy = y + dir.dy;
 
-    for (i = 0; i < max_len; i++)
+    for (int i = 0; i < max_len; i++)
     {
         field[cx][cy] = id;
         len++;
@@ -470,12 +469,9 @@ int draw_line(int** field, int x, int y, Direction dir, int rows, int cols, int 
 */
 int is_fully_covered(int** field, int rows, int cols)
 {
-    int row_index;
-    int col_index;
-
-    for (row_index = 0; row_index < rows; row_index++)
+    for (int row_index = 0; row_index < rows; row_index++)
     {
-        for (col_index = 0; col_index < cols; col_index++)
+        for (int col_index = 0; col_index < cols; col_index++)
         {
             if (field[row_index][col_index] == EMPTY)
             {
@@ -501,15 +497,11 @@ int is_fully_covered(int** field, int rows, int cols)
 int** generate_puzzle(int rows, int cols)
 {
     Direction directions_local[4] = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
-
     int** puzzle;
-
     int black_count;
     int area;
-
     Point* blacks;
     int* lengths;
-
     int placed;
 
     puzzle = create_field(rows, cols);
@@ -664,20 +656,17 @@ int** generate_puzzle(int rows, int cols)
 */
 int print_field(int** field, int rows, int cols)
 {
-    int i;
-    int j;
-
     printf("+");
-    for (j = 0; j < cols; j++)
+    for (int j = 0; j < cols; j++)
     {
         printf("-----+");
     }
     printf("\n");
 
-    for (i = 0; i < rows; i++)
+    for (int i = 0; i < rows; i++)
     {
         printf("|");
-        for (j = 0; j < cols; j++)
+        for (int j = 0; j < cols; j++)
         {
             if (field[i][j] == WHITE)
             {
@@ -691,7 +680,7 @@ int print_field(int** field, int rows, int cols)
         printf("\n");
 
         printf("+");
-        for (j = 0; j < cols; j++)
+        for (int j = 0; j < cols; j++)
         {
             printf("-----+");
         }
@@ -713,8 +702,6 @@ int print_field(int** field, int rows, int cols)
 int save_to_file(int** field, int rows, int cols, char* filename)
 {
     FILE* file;
-    int i;
-    int j;
 
     file = fopen(filename, "w");
     if (file == NULL)
@@ -725,9 +712,9 @@ int save_to_file(int** field, int rows, int cols, char* filename)
 
     fprintf(file, "%d %d\n", rows, cols);
 
-    for (i = 0; i < rows; i++)
+    for (int i = 0; i < rows; i++)
     {
-        for (j = 0; j < cols; j++)
+        for (int j = 0; j < cols; j++)
         {
             fprintf(file, "%d ", field[i][j]);
         }
@@ -741,7 +728,7 @@ int save_to_file(int** field, int rows, int cols, char* filename)
 }
 
 /**
-* Выполняет быструю проверку согласованности поля
+* Выполняет проверку верности поля
 * Проверка: сумма чисел в чёрных клетках равна количеству белых клеток (WHITE)
 * @param puzzle игровое поле
 * @param rows количество строк
@@ -752,15 +739,13 @@ int is_solvable(int** puzzle, int rows, int cols)
 {
     int total_white;
     int total_black_numbers;
-    int i;
-    int j;
 
     total_white = 0;
     total_black_numbers = 0;
 
-    for (i = 0; i < rows; i++)
+    for (int i = 0; i < rows; i++)
     {
-        for (j = 0; j < cols; j++)
+        for (int j = 0; j < cols; j++)
         {
             if (puzzle[i][j] == WHITE)
             {
