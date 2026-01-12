@@ -513,34 +513,31 @@ int** generate_puzzle(int rows, int cols)
     black_count = 0;
     area = rows * cols;
 
-    if (area <= 25)
+    typedef struct
     {
-        black_count = 3 + rand() % 3;
-    }
-    else if (area <= 64)
+        int field_area;
+        int blacks_count;
+        int amount_of_rand_numbers;
+    } BlackParams;
+
+    BlackParams black_params[] = {
+        {25,  3, 3},
+        {64,  9, 4},
+        {81,  15, 5},
+        {100, 36, 6},
+        {121, 45, 7},
+        {144, 56, 8}
+    };
+
+    int black_params_count = (int)(sizeof(black_params) / sizeof(black_params[0]));
+    int i = 0;
+
+    while (i < black_params_count && area > black_params[i].field_area)
     {
-        black_count = 9 + rand() % 4;
+        i++;
     }
-    else if (area <= 81)
-    {
-        black_count = 15 + rand() % 5;
-    }
-    else if (area <= 100)
-    {
-        black_count = 36 + rand() % 6;
-    }
-    else if (area <= 121)
-    {
-        black_count = 45 + rand() % 7;
-    }
-    else if (area <= 144)
-    {
-        black_count = 56 + rand() % 8;
-    }
-    else
-    {
-        black_count = 3;
-    }
+
+    black_count = black_params[i].blacks_count + rand() % black_params[i].amount_of_rand_numbers;
 
     blacks = (Point*)malloc((size_t)black_count * sizeof(Point));
     if (blacks == NULL)
